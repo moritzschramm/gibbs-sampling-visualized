@@ -2,6 +2,7 @@
 Copy these JARs into ./ directory
 
 ```
+Animal.jar
 Javaluator.jar
 commons-beanutils-bean-collections-1.8.2.jar
 commons-beanutils-core-1.8.2.jar
