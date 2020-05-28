@@ -3,7 +3,7 @@
 	<Folder name="Root">
 		<Primitive type="int">
 			<name>Seed</name>
-			<value><double>1234</double></value>
+			<value><int>1234</int></value>
 			<description>Der Seed für die zufällig berechneten Sample Werte</description>
 		</Primitive>
 

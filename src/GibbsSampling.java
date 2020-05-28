@@ -5,20 +5,13 @@
  */
 //FIXME package generators.misc;
 
-import algoanim.primitives.Graph;
-import algoanim.primitives.SourceCode;
 import algoanim.primitives.Text;
-import algoanim.properties.AnimationPropertiesKeys;
-import algoanim.properties.GraphProperties;
-import algoanim.properties.SourceCodeProperties;
-import algoanim.properties.TextProperties;
+import algoanim.properties.*;
 import generators.framework.Generator;
 import generators.framework.GeneratorType;
 import generators.framework.ValidatingGenerator;
 
 import java.awt.*;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.*;
 import algoanim.primitives.generators.Language;
 import generators.framework.properties.AnimationPropertiesContainer;
@@ -31,26 +24,14 @@ public class GibbsSampling implements ValidatingGenerator {
 
     private Random random;
 
-    private Graph g;
     private Text header;
-    private Text information;
-    private SourceCode sc;
-    private SourceCode exp;
 
-    public final int INDENTATION_WIDTH = 2;
+    private Code code;
+    private BayesNet bn;
+    private InformationDisplay info;
 
     // iteration number, increased when sample() is called
     private int iteration = 0;
-
-    // hashtables, containing probabilities and values of random variables
-    private Hashtable<String, Double> probabilities;
-    private Hashtable<String, Boolean> values;
-
-    // keys for hashtable 'values'
-    private final String A = "A";
-    private final String B = "B";
-    private final String X = "X";
-    private final String Y = "Y";
 
     // contains sum of sample values (sampleX[0]: samples when X is false, sampleX[1]: samples when X is true)
     private int[] samplesX;
@@ -58,72 +39,33 @@ public class GibbsSampling implements ValidatingGenerator {
     private double[] normalizedSamplesX;
     private double[] normalizedSamplesY;
 
+
     public void init() {
         lang = new AnimalScript("Gibbs Sampling", "Moritz Schramm", 800, 600);
         lang.setStepMode(true);
+        lang.setInteractionType(Language.INTERACTION_TYPE_AVINTERACTION);
 
         random = new Random();
 
-        probabilities = new Hashtable<>();
-        values = new Hashtable<>();
-        values.put(A, false);
-        values.put(B, false);
-        values.put(X, false);
-        values.put(Y, false);
+        iteration = 0;
         samplesX = new int[2];
         samplesY = new int[2];
         normalizedSamplesX = new double[2];
         normalizedSamplesY = new double[2];
 
+        code = new Code(lang);
+        bn = new BayesNet(lang);
+        info = new InformationDisplay(lang, bn, samplesX, samplesY, normalizedSamplesX, normalizedSamplesY);
     }
 
+    /* methods used to create animation */
     public String generate(AnimationPropertiesContainer props, Hashtable<String, Object> primitives) {
 
         // set seed
         random.setSeed((int) primitives.get("Seed"));
 
-        // init probabilities
-        probabilities.put("P(Y)", (double) primitives.get("P(Y)"));
-        probabilities.put("P(X | Y=true)", (double) primitives.get("P(X | Y=true)"));
-        probabilities.put("P(X | Y=false)", (double) primitives.get("P(X | Y=false)"));
-        probabilities.put("P(A | Y=true)", (double) primitives.get("P(A | Y=true)"));
-        probabilities.put("P(A | Y=false)", (double) primitives.get("P(A | Y=false)"));
-        probabilities.put("P(B | A=true, X=true)", (double) primitives.get("P(B | A=true, X=true)"));
-        probabilities.put("P(B | A=true, X=false)", (double) primitives.get("P(B | A=true, X=false)"));
-        probabilities.put("P(B | A=false, X=true)", (double) primitives.get("P(B | A=false, X=true)"));
-        probabilities.put("P(B | A=false, X=false)", (double) primitives.get("P(B | A=false, X=false)"));
-
-        // init values
-        values.put(A, (boolean) primitives.get(A));
-        values.put(B, (boolean) primitives.get(B));
-
-
-        // init graph
-        int[][] adjacencyMatrix = new int[4][4];
-        for(int i = 0; i < adjacencyMatrix.length; i++)
-            for(int j = 0; j < adjacencyMatrix.length; j++)
-                adjacencyMatrix[i][j] = 0;
-
-        adjacencyMatrix[0][1] = 1;
-        adjacencyMatrix[0][2] = 1;
-        adjacencyMatrix[1][3] = 1;
-        adjacencyMatrix[2][3] = 1;
-
-        Node[] nodes = new Node[4];
-        nodes[0] = new Coordinates(150, 100);
-        nodes[1] = new Coordinates(50, 150);
-        nodes[2] = new Coordinates(250, 150);
-        nodes[3] = new Coordinates(150, 200);
-
-        GraphProperties graphProps = new GraphProperties();
-        graphProps.set(AnimationPropertiesKeys.DIRECTED_PROPERTY, true);
-        graphProps.set(AnimationPropertiesKeys.FILLED_PROPERTY, false);
-        graphProps.set(AnimationPropertiesKeys.FILL_PROPERTY, Color.WHITE);
-        graphProps.set(AnimationPropertiesKeys.EDGECOLOR_PROPERTY, Color.BLACK);
-        graphProps.set(AnimationPropertiesKeys.ELEMHIGHLIGHT_PROPERTY, Color.BLACK);
-        graphProps.set(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY, Color.GREEN);
-        graphProps.set(AnimationPropertiesKeys.NODECOLOR_PROPERTY, Color.BLACK);
-        graphProps.set(AnimationPropertiesKeys.WEIGHTED_PROPERTY, false);
+        // init probabilities and values
+        bn.setProbabilitiesAndValues(primitives);
 
 
         // header creation
@@ -133,100 +75,64 @@ public class GibbsSampling implements ValidatingGenerator {
         header = lang.newText(new Coordinates(20, 30), "Gibbs Sampling",
                 "header", null, headerProps);
 
+        lang.nextStep("Einleitung");
+
         // show introduction text (creates new step)
         showIntro();
 
         // graph creation
-        g = lang.newGraph("bn", adjacencyMatrix, nodes, new String[]{Y, A, X, B}, null, graphProps);
+        bn.add();
 
         // show additional information
-        addInformation();
+        info.add();
 
         // highlight evidence vars (value won't be changing, highlight color will stay the same)
-        highlightNode(A, values.get(A) ? Color.GREEN : Color.RED);
-        highlightNode(B, values.get(B) ? Color.GREEN : Color.RED);
+        bn.highlightNode(BayesNet.A, bn.values.get(BayesNet.A) ? Color.GREEN : Color.RED);
+        bn.highlightNode(BayesNet.B, bn.values.get(BayesNet.B) ? Color.GREEN : Color.RED);
 
         // add source code (unhighlighted)
-        addSourceCode();
+        code.add();
 
-        lang.nextStep();
+        lang.nextStep("1. Iteration");
 
-        highlightStep(0);
+        code.highlight(0);
 
 
         lang.nextStep();
 
         sample();
 
-        for(int i = 0; i < 10; i++) {
+        /*MultipleChoiceQuestionModel m = new MultipleChoiceQuestionModel("samples");
+        m.setPrompt("Wie oft soll noch gesamplet werden?");
+        m.setNumberOfTries(1);
+        m.addAnswer("10", 10, "OK");
+        m.addAnswer("100", 100, "OK");
+        m.addAnswer("1000", 1000, "OK");
+
+        lang.addMCQuestion(m);*/
 
 
-            highlightStep(0);
+        int SAMPLES = 9;
+
+        for(int i = 0; i < SAMPLES; i++) {
+
+
+            code.highlight(0);
             lang.nextStep();
             sample();
         }
 
-        unhighlightStep(6);
-        highlightStep(7);
+        code.highlight(6);
+        code.highlight(7);
 
+        lang.nextStep("Zusammenfassung");
 
         showOutro();
 
 
+        lang.finalizeGeneration();
+
         return lang.toString();
-    }
-
-    private Text iterationDisplay;
-    Text sampleXDisplay;
-    private Text sampleYDisplay;
-    private Text normalizedSampleXDisplay;
-    private Text normalizedSampleYDisplay;
-    private Text varDisplay;
-    private Text childVarDisplay;
-    private Text probabilityDisplay;
-    private void addInformation() {
-
-        TextProperties props = new TextProperties();
-        props.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
-                Font.SANS_SERIF, Font.PLAIN, 16));
-
-        iterationDisplay = lang.newText(new Coordinates(350, 70), "Iteration: " + iteration, "iterationDisplay", null, props);
-        sampleXDisplay = lang.newText(new Offset(0, 25, "iterationDisplay", AnimalScript.DIRECTION_NW), "Sample X: " + samplesX[1], "sampleXDisplay", null, props);
-        sampleYDisplay = lang.newText(new Offset(0, 25, "sampleXDisplay", AnimalScript.DIRECTION_NW), "Sample Y: " + samplesY[1], "sampleYDisplay", null, props);
-
-        normalizedSampleXDisplay =
-                lang.newText(new Offset(0, 25, "sampleYDisplay", AnimalScript.DIRECTION_NW), "Normalisierter X Wert: " + normalizedSamplesX[1], "normalizedSampleXDisplay", null, props);
-        normalizedSampleYDisplay =
-                lang.newText(new Offset(0, 25, "normalizedSampleXDisplay", AnimalScript.DIRECTION_NW), "Normalisierter Y Wert: " + normalizedSamplesY[1], "normalizedSampleYDisplay", null, props);
-
-        varDisplay = lang.newText(new Offset(0, 50, "normalizedSampleYDisplay", AnimalScript.DIRECTION_NW), "", "varDisplay", null, props);
-        probabilityDisplay = lang.newText(new Offset(0, 25, "varDisplay", AnimalScript.DIRECTION_NW), "", "probabilityDisplay", null, props);
-        childVarDisplay = lang.newText(new Offset(0, 25, "probabilityDisplay", AnimalScript.DIRECTION_NW), "", "childVarDisplay", null, props);
-    }
-
-    private void updateInformation() {
-
-        DecimalFormat df = new DecimalFormat("0.0##", new DecimalFormatSymbols(Locale.ENGLISH));
-
-        iterationDisplay.setText("Iteration: " + iteration, null, null);
-        sampleXDisplay.setText("Sample X: " + samplesX[1], null, null);
-        sampleYDisplay.setText("Sample Y: " + samplesY[1], null, null);
-        normalizedSampleXDisplay.setText("Normalisierter X Wert: "+ df.format(normalizedSamplesX[1]), null, null);
-        normalizedSampleYDisplay.setText("Normalisierter Y Wert: "+ df.format(normalizedSamplesY[1]), null, null);
-    }
-
-    private void updateVars(String var, String childVar, Double probability) {
-
-        DecimalFormat df = new DecimalFormat("0.0###", new DecimalFormatSymbols(Locale.ENGLISH));
-
-        if(var != null ) varDisplay.setText("Var = " + var, null, null);
-        else varDisplay.setText("", null, null);
-
-        if(childVar != null) childVarDisplay.setText("ChildVar = " + childVar, null, null);
-        else childVarDisplay.setText("", null, null);
-
-        if(probability != null) probabilityDisplay.setText("p = " + df.format(probability), null, null);
-        else probabilityDisplay.setText("", null, null);
     }
 
     private void showIntro() {
@@ -260,108 +166,82 @@ public class GibbsSampling implements ValidatingGenerator {
         lang.nextStep();
     }
 
-    private void addSourceCode() {
 
-        SourceCodeProperties sourceCodeProps = new SourceCodeProperties();
-        sourceCodeProps.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
-                Font.MONOSPACED, Font.PLAIN, 16));
-        sourceCodeProps.set(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY, Color.RED);
 
-        sc = lang.newSourceCode(new Coordinates(0, 350), "sourceCode",
-                null, sourceCodeProps);
-
-        exp = lang.newSourceCode(new Coordinates(550, 350), "explanation", null, sourceCodeProps);
-
-        sc.addCodeLine("for i = 1 to NumberOfSamples:", null, 0*INDENTATION_WIDTH, null);                         // 0
-        exp.addCodeLine("// starte neue Iteration", null, 0, null);
-        sc.addCodeLine("for each Var in NonevidenceVars:", null, 1*INDENTATION_WIDTH, null);                      // 1
-        exp.addCodeLine("// wähle Zufallsvariable, deren Wert nicht bekannt ist, aus", null, 0, null);
-        sc.addCodeLine("p = P( Var | parents(Var) )", null, 2*INDENTATION_WIDTH, null);                           // 2
-        exp.addCodeLine("// Die Wahrscheinlichkeit P( Var | markov-blanket(Var) ) = P(Var | parents(Var) ) * ...", null, 0, null);
-        sc.addCodeLine("for each ChildVar in children(Var):", null, 2*INDENTATION_WIDTH, null);                   // 3
-        exp.addCodeLine("// ... * P( ChildVar | parents(ChildVar) )  für jeden Kindknoten ...", null, 0, null);
-        sc.addCodeLine("p = p * P( ChildVar | parents(ChildVar) )", null, 3*INDENTATION_WIDTH, null);             // 4
-        exp.addCodeLine("// ... wobei diese bedingten Wahrscheinlichkeiten bekannt sind", null, 0, null);
-        sc.addCodeLine("sampleValue = createValueGivenProbability(p)", null, 2*INDENTATION_WIDTH, null);          // 5
-        exp.addCodeLine("// basierend auf der berechneten Wahrscheinlichkeit 'p', erzeuge einen Wert für die ...", null, 0, null);
-        sc.addCodeLine("increaseSampleCount(Var, sampleValue)", null, 2*INDENTATION_WIDTH, null);                 // 6
-        exp.addCodeLine("// ... gewählte Zufallsvariable und speichere den Wert in einer Liste", null, 0, null);
-        sc.addCodeLine("return normalize(Samples)", null, 0*INDENTATION_WIDTH, null);                             // 7
-        exp.addCodeLine("// normalisiere die Liste und gib das Ergebnis zurück", null, 0, null);
-    }
+    /* algorithm */
 
     private void sample() {
 
         iteration++;
-        updateInformation();
+        info.updateInformation(iteration);
 
-        for(String var: new String[]{Y, X}) {
+        for(String var: new String[]{BayesNet.Y, BayesNet.X}) {
 
-            unhighlightStep(0);
-            unhighlightStep(6);
-            highlightStep(1);
+            code.unhighlight(0);
+            code.unhighlight(6);
+            code.highlight(1);
 
-            highlightNode(var, Color.GRAY);
-            updateVars(var, null, null);
-
-            lang.nextStep();
-
-            double p = probabilities.get(key(var, parents(var)));
-
-            updateVars(var, null, p);
-
-            unhighlightStep(1);
-            highlightStep(2);
+            bn.highlightNode(var, Color.GRAY);
+            info.updateVars(var, null, null);
 
             lang.nextStep();
 
-            for(String child: children(var)) {
+            double p = bn.probabilities.get(bn.key(var, bn.parents(var)));
 
-                unhighlightStep(2);
-                unhighlightStep(4);
-                highlightStep(3);
+            info.updateVars(var, null, p);
 
-                highlightNode(child, Color.LIGHT_GRAY);
+            code.unhighlight(1);
+            code.highlight(2);
 
-                updateVars(var, child, p);
+            lang.nextStep();
+
+            for(String child: bn.children(var)) {
+
+                code.unhighlight(2);
+                code.unhighlight(4);
+                code.highlight(3);
+
+                bn.highlightNode(child, Color.LIGHT_GRAY);
+
+                info.updateVars(var, child, p);
 
                 lang.nextStep();
 
-                p *= probabilities.get(key(child, parents(child)));
+                p *= bn.probabilities.get(bn.key(child, bn.parents(child)));
 
-                updateVars(var, child, p);
+                info.updateVars(var, child, p);
 
-                unhighlightStep(3);
-                highlightStep(4);
+                code.unhighlight(3);
+                code.highlight(4);
 
-                highlightNode(child, values.get(child) ? Color.GREEN : Color.RED);
+                bn.highlightNode(child, bn.values.get(child) ? Color.GREEN : Color.RED);
 
                 lang.nextStep();
             }
 
-            unhighlightStep(4);
-            highlightStep(5);
+            code.unhighlight(4);
+            code.highlight(5);
 
             lang.nextStep();
 
             boolean value = createSampleValue(p);
 
-            values.put(var, value);
+            bn.values.put(var, value);
 
-            highlightNode(var, value ? Color.GREEN : Color.RED);
+            bn.highlightNode(var, value ? Color.GREEN : Color.RED);
 
-            unhighlightStep(5);
-            highlightStep(6);
+            code.unhighlight(5);
+            code.highlight(6);
 
             lang.nextStep();
 
             increaseSampleCount(var, value);
-            updateInformation();
+            info.updateInformation(iteration);
 
-            unhighlightStep(6);
+            code.unhighlight(6);
         }
 
-        updateVars(null, null, null);
+        info.updateVars(null, null, null);
     }
 
     private boolean createSampleValue(double p) {
@@ -371,110 +251,25 @@ public class GibbsSampling implements ValidatingGenerator {
 
     private void increaseSampleCount(String var, boolean value) {
 
-        if(var.equals(X)) {
+        if(var.equals(BayesNet.X)) {
 
             samplesX[value ? 1 : 0]++;
-            normalizedSamplesX = normalize(samplesX);
+            double sum = samplesX[0] + samplesX[1];
+            normalizedSamplesX[0] = samplesX[0] / sum;
+            normalizedSamplesX[1] = samplesX[1] / sum;
 
-        } else if (var.equals(Y)) {
+        } else if (var.equals(BayesNet.Y)) {
 
             samplesY[value ? 1 : 0]++;
-            normalizedSamplesY = normalize(samplesY);
+            double sum = samplesY[0] + samplesY[1];
+            normalizedSamplesY[0] = samplesY[0] / sum;
+            normalizedSamplesY[1] = samplesY[1] / sum;
         }
     }
 
-    private String[] parents(String var) {
-
-        switch (var) {
-            case A: return new String[]{Y};
-            case B: return new String[]{A,X};
-            case X: return new String[]{Y};
-            case Y: return new String[]{};
-            default: return new String[]{};
-        }
-    }
-
-    private String[] children(String var) {
-
-        switch (var) {
-            case A: return new String[]{B};
-            case B: return new String[]{};
-            case X: return new String[]{B};
-            case Y: return new String[]{A,X};
-            default: return new String[]{};
-        }
-    }
-
-    private double[] normalize(int [] input) {
-
-        if(input.length != 2) return null;
-
-        double sum = input[0] + input[1];
-
-        return new double[] {input[0] / sum, input[1] / sum};
-    }
 
 
-    private void highlightStep(int lineNo) {
-
-        sc.highlight(lineNo);
-        exp.highlight(lineNo);
-    }
-
-    private void unhighlightStep(int lineNo) {
-
-        sc.unhighlight(lineNo);
-        exp.unhighlight(lineNo);
-    }
-
-    private void highlightNode(String node, Color color) {
-
-        g.setNodeHighlightFillColor(node2int(node), color, null, null);
-        g.highlightNode(node2int(node), null, null);
-    }
-
-    private void unhighlightNode(String node) {
-
-        g.unhighlightNode(node2int(node), null, null);
-    }
-
-    private int node2int(String node) {
-        switch (node) {
-            case A: return 1;
-            case B: return 3;
-            case X: return 2;
-            case Y: return 0;
-            default: return -1;
-        }
-    }
-
-    public String key(final String var) { return key(var, new String[]{}); }
-    public String key(final String var, final String... evidence) {
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("P(");
-        sb.append(var);
-
-        if(evidence.length > 0) {
-            sb.append(" | ");
-        }
-
-        Arrays.sort(evidence);
-
-        for(int i = 0; i < evidence.length; i++) {
-
-            if(i != 0) sb.append(", ");
-
-            sb.append(evidence[i]);
-            sb.append("=");
-            sb.append(values.get(evidence[i]));
-        }
-
-        sb.append(")");
-
-        return sb.toString();
-    }
-
+    /* Interface methods */
     public String getName() {
         return "Gibbs Sampling";
     }
@@ -488,7 +283,7 @@ public class GibbsSampling implements ValidatingGenerator {
     }
 
     public String getDescription(){
-        return "desc";
+        return "Bayessche Netze werden dazu genutzt, um Abhängigkeiten zwischen Zufallsvariablen zu modellieren und Wahrscheinlichkeiten von Ereignissen zu berechnen. Exakte Inferenz, d.h. die Bestimmung einer bedingten Wahrscheinlichkeit, ist in solchen Netzen allerdings ein NP-hartes Problem, weswegen man mit Sampling Methoden zumindest eine annähernd exakte Inferenz erreichen will.<br>Hier wird Gibbs Sampling genutzt, ein Markov Chain Monte Carlo Algorithmus. Dieser beginnt in einem willkürlichen Zustand und erzeugt jede Iteration einen neuen Zustand, indem ein Wert durch ein zufälliges Sample einer Zufallsvariable erzeugt wird. Die Wahrscheinlichkeit einen bestimmten Wert zu samplen hängt dabei von den vorher festgeletgten bedingten Wahrscheinlichkeiten der Zufallsvariablen ab.";
     }
 
     public String getCodeExample(){
@@ -530,7 +325,7 @@ public class GibbsSampling implements ValidatingGenerator {
 
         for(String key: primitives.keySet()) {
 
-            if(key.equals("A") || key.equals("B")) continue;
+            if(key.equals("A") || key.equals("B") || key.equals("Seed")) continue;
 
             double v = (double) primitives.get(key);
 
@@ -543,9 +338,10 @@ public class GibbsSampling implements ValidatingGenerator {
     public static void main(String[] args) {
 
         Generator generator = new GibbsSampling();
+        generator.init();
         //animal.main.Animal.startGeneratorWindow(generator);
 
-        generator.init();
+
 
         Hashtable<String, Object> primitives = new Hashtable<>();
         primitives.put("Seed", 1234);
