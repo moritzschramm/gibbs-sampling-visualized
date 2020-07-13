@@ -1,0 +1,25 @@
+noSuchKeyException=Es gibt keine Ressource f\u000ferr Eintrag {0}
+iconNotFound=Icon "{0}" not found
+
+### keys ###
+intro=Einleitung
+firstIteration=1. Iteration
+outro=Zusammenfassung
+
+description=Test hallo 123 test test Test hallo 123 test test Test hallo 123 test test Test hallo 123 test test Test hallo 123 test test Test hallo 123 test test Test hallo 123 test test Test hallo 123 test test Test hallo 123 test test Test hallo 123 test test
+
+line0=// starte neue Iteration
+
+line1=// wähle Zufallsvariable, deren Wert nicht bekannt ist, aus
+
+line2=// Die Wahrscheinlichkeit P( Var | markov-blanket(Var) ) = P(Var | parents(Var) ) * ...
+
+line3=// ... * P( ChildVar | parents(ChildVar) )  für jeden Kindknoten ...
+
+line4=// ... wobei diese bedingten Wahrscheinlichkeiten bekannt sind
+
+line5=// basierend auf der berechneten Wahrscheinlichkeit 'p', erzeuge einen Wert für die ...
+
+line6=// ... gewählte Zufallsvariable und speichere den Wert in einer Liste
+
+line7=// normalisiere die Liste und gib das Ergebnis zurück
