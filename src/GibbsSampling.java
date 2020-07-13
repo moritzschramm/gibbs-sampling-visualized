@@ -303,8 +303,7 @@ public class GibbsSampling implements ValidatingGenerator {
         return "Moritz Schramm, Moritz Andres";
     }
 
-    public String getDescription(){
-        //return "Bayessche Netze werden dazu genutzt, um Abhängigkeiten zwischen Zufallsvariablen zu modellieren und Wahrscheinlichkeiten von Ereignissen zu berechnen. Exakte Inferenz, d.h. die Bestimmung einer bedingten Wahrscheinlichkeit, ist in solchen Netzen allerdings ein NP-hartes Problem, weswegen man mit Sampling Methoden zumindest eine annähernd exakte Inferenz erreichen will.<br>Hier wird Gibbs Sampling genutzt, ein Markov Chain Monte Carlo Algorithmus. Dieser beginnt in einem willkürlichen Zustand und erzeugt jede Iteration einen neuen Zustand, indem ein Wert durch ein zufälliges Sample einer Zufallsvariable erzeugt wird. Die Wahrscheinlichkeit einen bestimmten Wert zu samplen hängt dabei von den vorher festgeletgten bedingten Wahrscheinlichkeiten der Zufallsvariablen ab.";
+    public String getDescription() {
         return translator.translateMessage("description");
     }
 
