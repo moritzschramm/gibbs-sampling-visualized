@@ -7,6 +7,12 @@
 			<description>Der Seed für die zufällig berechneten Sample Werte</description>
 		</Primitive>
 
+		<Primitive type="int">
+			<name>Anzahl Iterationen</name>
+			<value><int>10</int></value>
+			<description>Die Anzahl der Iterationen</description>
+		</Primitive>
+
 		<Primitive type="double">
 			<name>P(Y)</name>
 			<value><double>0.3</double></value>

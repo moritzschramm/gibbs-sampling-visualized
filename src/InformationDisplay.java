@@ -47,17 +47,26 @@ public class InformationDisplay {
         props.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
                 Font.SANS_SERIF, Font.PLAIN, 16));
 
-        iterationDisplay = lang.newText(new Coordinates(350, 70), "Iteration: 0", "iterationDisplay", null, props);
-        sampleXDisplay = lang.newText(new Offset(0, 25, "iterationDisplay", AnimalScript.DIRECTION_NW), "Samples X: (" + samplesX[1] + ", " + samplesX[0] + ")", "sampleXDisplay", null, props);
+        iterationDisplay = lang.newText(new Coordinates(350, 70), "Iteration: 0",
+                "iterationDisplay", null, props);
+        sampleXDisplay = lang.newText(new Offset(0, 25, "iterationDisplay",
+                AnimalScript.DIRECTION_NW), "Samples X: (" + samplesX[1] + ", " + samplesX[0] + ")",
+                "sampleXDisplay", null, props);
 
         normalizedSampleXDisplay =
-                lang.newText(new Offset(0, 25, "sampleXDisplay", AnimalScript.DIRECTION_NW), bn.key(BayesNet.X, BayesNet.A, BayesNet.B)+" = (" + normalizedSamplesX[1] + ", " +normalizedSamplesX[0] + ")", "normalizedSampleXDisplay", null, props);
+                lang.newText(new Offset(0, 25, "sampleXDisplay",
+                        AnimalScript.DIRECTION_NW),
+                        bn.key(BayesNet.X, BayesNet.A, BayesNet.B)+" = (" + normalizedSamplesX[1] + ", " +normalizedSamplesX[0] + ")",
+                        "normalizedSampleXDisplay", null, props);
 
         props.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(Font.SANS_SERIF, Font.BOLD, 16));
 
-        varDisplay = lang.newText(new Offset(0, 50, "normalizedSampleXDisplay", AnimalScript.DIRECTION_NW), "", "varDisplay", null, props);
-        probabilityDisplay = lang.newText(new Offset(0, 25, "varDisplay", AnimalScript.DIRECTION_NW), "", "probabilityDisplay", null, props);
-        childVarDisplay = lang.newText(new Offset(0, 25, "probabilityDisplay", AnimalScript.DIRECTION_NW), "", "childVarDisplay", null, props);
+        varDisplay = lang.newText(new Offset(0, 50, "normalizedSampleXDisplay",
+                AnimalScript.DIRECTION_NW), "", "varDisplay", null, props);
+        probabilityDisplay = lang.newText(new Offset(0, 25, "varDisplay",
+                AnimalScript.DIRECTION_NW), "", "probabilityDisplay", null, props);
+        childVarDisplay = lang.newText(new Offset(0, 25, "probabilityDisplay",
+                AnimalScript.DIRECTION_NW), "", "childVarDisplay", null, props);
 
     }
 
@@ -67,7 +76,9 @@ public class InformationDisplay {
 
         iterationDisplay.setText("Iteration: " + iteration, null, null);
         sampleXDisplay.setText("Samples X: (" + samplesX[1] + ", " + samplesX[0] + ")", null, null);
-        normalizedSampleXDisplay.setText(bn.key(BayesNet.X, BayesNet.A, BayesNet.B)+" = ("+ df.format(normalizedSamplesX[1]) + ", " + df.format(normalizedSamplesX[0]) + ")", null, null);
+        normalizedSampleXDisplay
+                .setText(bn.key(BayesNet.X, BayesNet.A, BayesNet.B)+" = ("+ df.format(normalizedSamplesX[1])
+                        + ", " + df.format(normalizedSamplesX[0]) + ")", null, null);
     }
 
     public void updateVars(String var, String childVar, Double probability) {

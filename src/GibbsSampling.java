@@ -18,9 +18,15 @@ import generators.framework.properties.AnimationPropertiesContainer;
 import algoanim.animalscript.AnimalScript;
 import algoanim.util.*;
 
+import translator.Translator;
+
 public class GibbsSampling implements ValidatingGenerator {
 
     private Language lang;
+
+    private Translator translator;
+    private String resourceName;
+    private Locale locale;
 
     private Random random;
 
@@ -32,6 +38,7 @@ public class GibbsSampling implements ValidatingGenerator {
 
     // iteration number, increased when sample() is called
     private int iteration = 0;
+    private int numberOfIterations = 10;
 
     // contains sum of sample values (sampleX[0]: samples when X is false, sampleX[1]: samples when X is true)
     private int[] samplesX;
@@ -39,11 +46,18 @@ public class GibbsSampling implements ValidatingGenerator {
     private double[] normalizedSamplesX;
     private double[] normalizedSamplesY;
 
+    public GibbsSampling(String resourceName, Locale locale) {
+        this.resourceName = resourceName;
+        this.locale = locale;
+    }
 
     public void init() {
         lang = new AnimalScript("Gibbs Sampling", "Moritz Schramm", 800, 600);
         lang.setStepMode(true);
         lang.setInteractionType(Language.INTERACTION_TYPE_AVINTERACTION);
+
+
+        translator = new Translator(resourceName, locale);
 
         random = new Random();
 
@@ -53,7 +67,7 @@ public class GibbsSampling implements ValidatingGenerator {
         normalizedSamplesX = new double[2];
         normalizedSamplesY = new double[2];
 
-        code = new Code(lang);
+        code = new Code(lang, translator);
         bn = new BayesNet(lang);
         info = new InformationDisplay(lang, bn, samplesX, samplesY, normalizedSamplesX, normalizedSamplesY);
     }
@@ -63,6 +77,9 @@ public class GibbsSampling implements ValidatingGenerator {
 
         // set seed
         random.setSeed((int) primitives.get("Seed"));
+
+        // set number of iterations
+        numberOfIterations = (int) primitives.get("Anzahl Iterationen");
 
         // init probabilities and values
         bn.setProbabilitiesAndValues(primitives);
@@ -75,7 +92,7 @@ public class GibbsSampling implements ValidatingGenerator {
         header = lang.newText(new Coordinates(20, 30), "Gibbs Sampling",
                 "header", null, headerProps);
 
-        lang.nextStep("Einleitung");
+        lang.nextStep(translator.translateMessage("intro"));
 
         // show introduction text (creates new step)
         showIntro();
@@ -93,7 +110,7 @@ public class GibbsSampling implements ValidatingGenerator {
         // add source code (unhighlighted)
         code.add();
 
-        lang.nextStep("1. Iteration");
+        lang.nextStep(translator.translateMessage("firstIteration"));
 
         code.highlight(0);
 
@@ -111,10 +128,7 @@ public class GibbsSampling implements ValidatingGenerator {
 
         lang.addMCQuestion(m);*/
 
-
-        int SAMPLES = 9;
-
-        for(int i = 0; i < SAMPLES; i++) {
+        for(int i = 0; i < numberOfIterations - 1; i++) {
 
 
             code.highlight(0);
@@ -125,7 +139,7 @@ public class GibbsSampling implements ValidatingGenerator {
         code.highlight(6);
         code.highlight(7);
 
-        lang.nextStep("Zusammenfassung");
+        lang.nextStep(translator.translateMessage("outro"));
 
         showOutro();
 
@@ -143,6 +157,13 @@ public class GibbsSampling implements ValidatingGenerator {
 
         String text = getDescription();
 
+        /* TODO add content:
+        - wofür brauchen wir gibbs sampling
+        - Beispielnetzwerk erklären (Abhängigkeiten)
+        - verwendete Farben erklären
+        - posterior probability erklären
+         */
+
         Text intro = lang.newText(new Coordinates(20, 80), text, null, null, props);
 
         lang.nextStep();
@@ -159,7 +180,7 @@ public class GibbsSampling implements ValidatingGenerator {
         props.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
                 Font.SANS_SERIF, Font.PLAIN, 16));
 
-        String text = "outro";       // TODO add summary (StringBuilder,..)
+        String text = "outro";       // TODO add summary total number of iterations, sample count, (posterior probability (true/false)
 
         Text outro = lang.newText(new Coordinates(20, 80), text, null, null, props);
 
@@ -279,11 +300,12 @@ public class GibbsSampling implements ValidatingGenerator {
     }
 
     public String getAnimationAuthor() {
-        return "Moritz Schramm";
+        return "Moritz Schramm, Moritz Andres";
     }
 
     public String getDescription(){
-        return "Bayessche Netze werden dazu genutzt, um Abhängigkeiten zwischen Zufallsvariablen zu modellieren und Wahrscheinlichkeiten von Ereignissen zu berechnen. Exakte Inferenz, d.h. die Bestimmung einer bedingten Wahrscheinlichkeit, ist in solchen Netzen allerdings ein NP-hartes Problem, weswegen man mit Sampling Methoden zumindest eine annähernd exakte Inferenz erreichen will.<br>Hier wird Gibbs Sampling genutzt, ein Markov Chain Monte Carlo Algorithmus. Dieser beginnt in einem willkürlichen Zustand und erzeugt jede Iteration einen neuen Zustand, indem ein Wert durch ein zufälliges Sample einer Zufallsvariable erzeugt wird. Die Wahrscheinlichkeit einen bestimmten Wert zu samplen hängt dabei von den vorher festgeletgten bedingten Wahrscheinlichkeiten der Zufallsvariablen ab.";
+        //return "Bayessche Netze werden dazu genutzt, um Abhängigkeiten zwischen Zufallsvariablen zu modellieren und Wahrscheinlichkeiten von Ereignissen zu berechnen. Exakte Inferenz, d.h. die Bestimmung einer bedingten Wahrscheinlichkeit, ist in solchen Netzen allerdings ein NP-hartes Problem, weswegen man mit Sampling Methoden zumindest eine annähernd exakte Inferenz erreichen will.<br>Hier wird Gibbs Sampling genutzt, ein Markov Chain Monte Carlo Algorithmus. Dieser beginnt in einem willkürlichen Zustand und erzeugt jede Iteration einen neuen Zustand, indem ein Wert durch ein zufälliges Sample einer Zufallsvariable erzeugt wird. Die Wahrscheinlichkeit einen bestimmten Wert zu samplen hängt dabei von den vorher festgeletgten bedingten Wahrscheinlichkeiten der Zufallsvariablen ab.";
+        return translator.translateMessage("description");
     }
 
     public String getCodeExample(){
@@ -325,11 +347,16 @@ public class GibbsSampling implements ValidatingGenerator {
 
         for(String key: primitives.keySet()) {
 
-            if(key.equals("A") || key.equals("B") || key.equals("Seed")) continue;
+            if (key.equals("A") || key.equals("B")) continue;
+
+            if (key.equals("Seed") || key.equals("Anzahl Iterationen")) {
+                int i = (int) primitives.get(key);
+                if (i <= 0) return false;
+            }
 
             double v = (double) primitives.get(key);
 
-            if(v < 0.0 || v > 1.0) return false;
+            if (v < 0.0 || v > 1.0) return false;
         }
 
         return true;
@@ -337,14 +364,16 @@ public class GibbsSampling implements ValidatingGenerator {
 
     public static void main(String[] args) {
 
-        Generator generator = new GibbsSampling();
+        Generator generator = new GibbsSampling("resources/gibbssampling", Locale.GERMANY);
         generator.init();
-        //animal.main.Animal.startGeneratorWindow(generator);
+        animal.main.Animal.startGeneratorWindow(generator);
 
 
 
-        Hashtable<String, Object> primitives = new Hashtable<>();
+        /*Hashtable<String, Object> primitives = new Hashtable<>();
         primitives.put("Seed", 1234);
+
+        primitives.put("Anzahl Iterationen", 10);
 
         primitives.put("P(Y)", 0.8);
         primitives.put("P(X | Y=true)", 0.4);
@@ -359,6 +388,6 @@ public class GibbsSampling implements ValidatingGenerator {
         primitives.put("A", false);
         primitives.put("B", true);
 
-        System.out.println(generator.generate(null, primitives));
+        System.out.println(generator.generate(null, primitives));*/
     }
 }
