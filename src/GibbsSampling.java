@@ -18,6 +18,7 @@ import generators.framework.properties.AnimationPropertiesContainer;
 import algoanim.animalscript.AnimalScript;
 import algoanim.util.*;
 
+import interactionsupport.models.*;
 import translator.Translator;
 
 public class GibbsSampling implements ValidatingGenerator {
@@ -46,13 +47,17 @@ public class GibbsSampling implements ValidatingGenerator {
     private double[] normalizedSamplesX;
     private double[] normalizedSamplesY;
 
+    // for questions
+    private String WRONG_ASW;
+    private String RIGHT_ASW;
+
     public GibbsSampling(String resourceName, Locale locale) {
         this.resourceName = resourceName;
         this.locale = locale;
     }
 
     public void init() {
-        lang = new AnimalScript("Gibbs Sampling", "Moritz Schramm", 800, 600);
+        lang = new AnimalScript("Gibbs Sampling", "Moritz Schramm, Moritz Andres", 800, 600);
         lang.setStepMode(true);
         lang.setInteractionType(Language.INTERACTION_TYPE_AVINTERACTION);
 
@@ -70,6 +75,10 @@ public class GibbsSampling implements ValidatingGenerator {
         code = new Code(lang, translator);
         bn = new BayesNet(lang);
         info = new InformationDisplay(lang, bn, samplesX, samplesY, normalizedSamplesX, normalizedSamplesY);
+
+
+        RIGHT_ASW = translator.translateMessage("right_asw");
+        WRONG_ASW = translator.translateMessage("wrong_asw");
     }
 
     /* methods used to create animation */
@@ -114,6 +123,13 @@ public class GibbsSampling implements ValidatingGenerator {
 
         code.highlight(0);
 
+        MultipleChoiceQuestionModel question1 = new MultipleChoiceQuestionModel("q1");
+        String feedback_q1 = translator.translateMessage("q1_fb");
+        question1.setPrompt(translator.translateMessage("q1_text"));
+        question1.addAnswer(translator.translateMessage("q1_asw1"), 0, WRONG_ASW + feedback_q1);
+        question1.addAnswer(translator.translateMessage("q1_asw2"), 0, WRONG_ASW + feedback_q1);
+        question1.addAnswer(translator.translateMessage("q1_asw3"), 1, RIGHT_ASW + feedback_q1);
+        lang.addMCQuestion(question1);
 
         lang.nextStep();
 
@@ -155,8 +171,6 @@ public class GibbsSampling implements ValidatingGenerator {
         props.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
                 Font.SANS_SERIF, Font.PLAIN, 16));
 
-        String text = getDescription();
-
         /* TODO add content:
         - wofür brauchen wir gibbs sampling
         - Beispielnetzwerk erklären (Abhängigkeiten)
@@ -164,11 +178,24 @@ public class GibbsSampling implements ValidatingGenerator {
         - posterior probability erklären
          */
 
-        Text intro = lang.newText(new Coordinates(20, 80), text, null, null, props);
+        String text = getDescription();
+
+        final int lineBreakSize = 16 + 3;
+        String[] parts = text.split("\n");
+        Text[] intro_ts = new Text[parts.length];
+
+        int lineCounter = 0;
+        for(String textPart : parts){
+            int yOffset = lineBreakSize * lineCounter;
+            Text intro = lang.newText(new Coordinates(20, 70 + yOffset), textPart, null, null, props);
+            intro_ts[lineCounter] = intro;
+            lineCounter++;
+        }
 
         lang.nextStep();
 
-        intro.hide();
+        for(Text intro : intro_ts)
+            intro.hide();
     }
 
     private void showOutro() {
@@ -180,9 +207,22 @@ public class GibbsSampling implements ValidatingGenerator {
         props.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
                 Font.SANS_SERIF, Font.PLAIN, 16));
 
-        String text = "outro";       // TODO add summary total number of iterations, sample count, (posterior probability (true/false)
 
-        Text outro = lang.newText(new Coordinates(20, 80), text, null, null, props);
+        // TODO add summary total number of iterations, sample count, (posterior probability (true/false)
+        String text = translator.translateMessage("outro");
+
+
+        final int lineBreakSize = 16 + 3;  // font size + gap
+        String[] parts = text.split("\n");
+        Text[] outro_ts = new Text[parts.length];
+
+        int lineCounter = 0;
+        for(String textPart : parts){
+            int yOffset = lineBreakSize * lineCounter;
+            Text outro = lang.newText(new Coordinates(20, 70 + yOffset), textPart, null, null, props);
+            outro_ts[lineCounter] = outro;
+            lineCounter++;
+        }
 
         lang.nextStep();
     }
@@ -365,11 +405,11 @@ public class GibbsSampling implements ValidatingGenerator {
 
         Generator generator = new GibbsSampling("resources/gibbssampling", Locale.GERMANY);
         generator.init();
-        animal.main.Animal.startGeneratorWindow(generator);
+//        animal.main.Animal.startGeneratorWindow(generator);
 
 
 
-        /*Hashtable<String, Object> primitives = new Hashtable<>();
+        Hashtable<String, Object> primitives = new Hashtable<>();
         primitives.put("Seed", 1234);
 
         primitives.put("Anzahl Iterationen", 10);
@@ -387,6 +427,6 @@ public class GibbsSampling implements ValidatingGenerator {
         primitives.put("A", false);
         primitives.put("B", true);
 
-        System.out.println(generator.generate(null, primitives));*/
+        System.out.println(generator.generate(null, primitives));
     }
 }
