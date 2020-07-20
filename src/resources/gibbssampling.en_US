@@ -2,13 +2,18 @@ noSuchKeyException=There is no resource for key {0}
 iconNotFound=Icon "{0}" not found
 
 ### keys ###
-intro=Bayesian networks are used to model dependencies between random variables and to calculate probabilities of events. \nDeveloping exact inference, i.e determine a conditional probability, is a NP-hard problem for bayesian networks. For this reason sampling methods are used to approximate the exact inference. \nHere we use Gibbs Sampling, a Markov Chain Monte Carlo algorithm. It starts in a random state and generates a new state based on a random sample of a random variable for each iteration. \nThe probability to sample a specific value depends on the conditional propabilities that were set at the beginning.
 
-description=A directed graph is used to visualize the bayessian network so that the vertices represent the random variables and the edges represent the conditions. \nThe sampled values for the random variables are colored either red (false) or green (true). \n The random variables whose conditional probabilities are calculated are clolored in gray. \nThe goal is to approximate the a-posteriori probability of X over the iterations. \nThis probability is shown next to the graph to evaluate the trend.
+introTOC=Intro
+firstIterationTOC=1st iteration
+outroTOC=Summary
+
+description=Bayesian networks are used to model dependencies between random variables and to calculate probabilities of events. \nDeveloping exact inference, i.e determine a conditional probability, is a NP-hard problem for bayesian networks. For this reason sampling methods are used to approximate the exact inference. \nHere we use Gibbs Sampling, a Markov Chain Monte Carlo algorithm. It starts in a random state and generates a new state based on a random sample of a random variable for each iteration. \nThe probability to sample a specific value depends on the conditional propabilities that were set at the beginning.
+
+intro=A directed graph is used to visualize the bayessian network so that the vertices represent the random variables and the edges represent the conditions. \nThe sampled values for the random variables are colored either red (false) or green (true). \n The random variables whose conditional probabilities are calculated are clolored in gray. \nThe goal is to approximate the a-posteriori probability of X over the iterations. \nThis probability is shown next to the graph to evaluate the trend.
 
 outro=As we can see, the algorithm produces an relatable result for X in consideration of the bayessian network. \nIt can be shown that the approximation converges in a stationary state of the markov-chain which corresponds to the real probability distribution. \nTherefore the bias of the discretization (sampling) vanishes with respect to the iterations taken. \nThe downside of this algorithm is that it needs all conditional probabilities which are often not available.
 
-firstIteration=1st iteration
+
 
 line0=// begin new iteration
 

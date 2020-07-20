@@ -101,7 +101,7 @@ public class GibbsSampling implements ValidatingGenerator {
         header = lang.newText(new Coordinates(20, 30), "Gibbs Sampling",
                 "header", null, headerProps);
 
-        lang.nextStep(translator.translateMessage("intro"));
+        lang.nextStep(translator.translateMessage("introTOC"));
 
         // show introduction text (creates new step)
         showIntro();
@@ -119,7 +119,7 @@ public class GibbsSampling implements ValidatingGenerator {
         // add source code (unhighlighted)
         code.add();
 
-        lang.nextStep(translator.translateMessage("firstIteration"));
+        lang.nextStep(translator.translateMessage("firstIterationTOC"));
 
         code.highlight(0);
 
@@ -153,9 +153,13 @@ public class GibbsSampling implements ValidatingGenerator {
         }
 
         code.highlight(6);
+
+        lang.nextStep();
+
+        code.unhighlight(6);
         code.highlight(7);
 
-        lang.nextStep(translator.translateMessage("outro"));
+        lang.nextStep(translator.translateMessage("outroTOC"));
 
         showOutro();
 
@@ -178,7 +182,7 @@ public class GibbsSampling implements ValidatingGenerator {
         - posterior probability erklären
          */
 
-        String text = getDescription();
+        String text = translator.translateMessage("intro");
 
         final int lineBreakSize = 16 + 3;
         String[] parts = text.split("\n");
@@ -219,10 +223,21 @@ public class GibbsSampling implements ValidatingGenerator {
         int lineCounter = 0;
         for(String textPart : parts){
             int yOffset = lineBreakSize * lineCounter;
-            Text outro = lang.newText(new Coordinates(20, 70 + yOffset), textPart, null, null, props);
+            Text outro = lang.newText(new Coordinates(20, 70 + yOffset), textPart, "outroline"+lineCounter, null, props);
             outro_ts[lineCounter] = outro;
             lineCounter++;
         }
+
+        Text iterationDisplay = lang.newText(new Offset(0, 30, "outroline"+(lineCounter-1), AnimalScript.DIRECTION_NW), "Iteration: "+iteration,
+                "iterationDisplayOutro", null, props);
+
+        Text propTrueDisplay = lang.newText(new Offset(0, 30, "iterationDisplayOutro", AnimalScript.DIRECTION_NW),
+                "P( X=true | A="+bn.values.get(bn.A)+", B="+bn.values.get(bn.B)+" ) = "+normalizedSamplesX[1],
+                "propTrueDisplayOutro", null, props);
+
+        Text propFalseDisplay = lang.newText(new Offset(0, 30, "propTrueDisplayOutro", AnimalScript.DIRECTION_NW),
+                "P( X=false | A="+bn.values.get(bn.A)+", B="+bn.values.get(bn.B)+" ) = "+normalizedSamplesX[0],
+                "propFalseDisplayOutro", null, props);
 
         lang.nextStep();
     }
@@ -391,6 +406,7 @@ public class GibbsSampling implements ValidatingGenerator {
             if (key.equals("Seed") || key.equals("Anzahl Iterationen")) {
                 int i = (int) primitives.get(key);
                 if (i <= 0) return false;
+                continue;
             }
 
             double v = (double) primitives.get(key);
@@ -405,11 +421,11 @@ public class GibbsSampling implements ValidatingGenerator {
 
         Generator generator = new GibbsSampling("resources/gibbssampling", Locale.GERMANY);
         generator.init();
-//        animal.main.Animal.startGeneratorWindow(generator);
+        animal.main.Animal.startGeneratorWindow(generator);
 
 
 
-        Hashtable<String, Object> primitives = new Hashtable<>();
+        /*Hashtable<String, Object> primitives = new Hashtable<>();
         primitives.put("Seed", 1234);
 
         primitives.put("Anzahl Iterationen", 10);
@@ -427,6 +443,6 @@ public class GibbsSampling implements ValidatingGenerator {
         primitives.put("A", false);
         primitives.put("B", true);
 
-        System.out.println(generator.generate(null, primitives));
+        System.out.println(generator.generate(null, primitives));*/
     }
 }
