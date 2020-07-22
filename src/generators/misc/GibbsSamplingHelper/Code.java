@@ -1,3 +1,5 @@
+package generators.misc.GibbsSamplingHelper;
+
 import algoanim.primitives.SourceCode;
 import algoanim.primitives.generators.Language;
 import algoanim.properties.AnimationPropertiesKeys;

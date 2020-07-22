@@ -1,4 +1,4 @@
-package generators.misc;
+package generators.misc.GibbsSamplingHelper;
 
 import algoanim.animalscript.AnimalScript;
 import algoanim.primitives.Text;

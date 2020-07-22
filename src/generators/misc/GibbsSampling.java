@@ -1,10 +1,11 @@
 /*
  * GibbsSampling.java
- * Moritz Schramm, 2020 for the Animal project at TU Darmstadt.
+ * Moritz Schramm, Moritz Andres, 2020 for the Animal project at TU Darmstadt.
  * Copying this file for educational purposes is permitted without further authorization.
  */
 package generators.misc;
 
+import generators.misc.GibbsSamplingHelper.*;
 import algoanim.primitives.Text;
 import algoanim.properties.*;
 import generators.framework.Generator;
@@ -18,6 +19,7 @@ import generators.framework.properties.AnimationPropertiesContainer;
 import algoanim.animalscript.AnimalScript;
 import algoanim.util.*;
 
+import interactionsupport.models.*;
 import translator.Translator;
 
 public class GibbsSampling implements ValidatingGenerator {
@@ -46,18 +48,21 @@ public class GibbsSampling implements ValidatingGenerator {
     private double[] normalizedSamplesX;
     private double[] normalizedSamplesY;
 
+    // for questions
+    private String WRONG_ASW;
+    private String RIGHT_ASW;
+
     public GibbsSampling(String resourceName, Locale locale) {
         this.resourceName = resourceName;
         this.locale = locale;
+
+        translator = new Translator(resourceName, locale);
     }
 
     public void init() {
-        lang = new AnimalScript("Gibbs Sampling", "Moritz Schramm", 800, 600);
+        lang = new AnimalScript("Gibbs Sampling", "Moritz Schramm, Moritz Andres", 800, 600);
         lang.setStepMode(true);
         lang.setInteractionType(Language.INTERACTION_TYPE_AVINTERACTION);
-
-
-        translator = new Translator(resourceName, locale);
 
         random = new Random();
 
@@ -70,6 +75,10 @@ public class GibbsSampling implements ValidatingGenerator {
         code = new Code(lang, translator);
         bn = new BayesNet(lang);
         info = new InformationDisplay(lang, bn, samplesX, samplesY, normalizedSamplesX, normalizedSamplesY);
+
+
+        RIGHT_ASW = translator.translateMessage("right_asw");
+        WRONG_ASW = translator.translateMessage("wrong_asw");
     }
 
     /* methods used to create animation */
@@ -92,7 +101,7 @@ public class GibbsSampling implements ValidatingGenerator {
         header = lang.newText(new Coordinates(20, 30), "Gibbs Sampling",
                 "header", null, headerProps);
 
-        lang.nextStep(translator.translateMessage("intro"));
+        lang.nextStep(translator.translateMessage("introTOC"));
 
         // show introduction text (creates new step)
         showIntro();
@@ -110,23 +119,21 @@ public class GibbsSampling implements ValidatingGenerator {
         // add source code (unhighlighted)
         code.add();
 
-        lang.nextStep(translator.translateMessage("firstIteration"));
+        lang.nextStep(translator.translateMessage("firstIterationTOC"));
 
         code.highlight(0);
 
+        MultipleChoiceQuestionModel question1 = new MultipleChoiceQuestionModel("q1");
+        String feedback_q1 = translator.translateMessage("q1_fb");
+        question1.setPrompt(translator.translateMessage("q1_text"));
+        question1.addAnswer(translator.translateMessage("q1_asw1"), 0, WRONG_ASW + feedback_q1);
+        question1.addAnswer(translator.translateMessage("q1_asw2"), 0, WRONG_ASW + feedback_q1);
+        question1.addAnswer(translator.translateMessage("q1_asw3"), 1, RIGHT_ASW + feedback_q1);
+        lang.addMCQuestion(question1);
 
         lang.nextStep();
 
         sample();
-
-        /*MultipleChoiceQuestionModel m = new MultipleChoiceQuestionModel("samples");
-        m.setPrompt("Wie oft soll noch gesamplet werden?");
-        m.setNumberOfTries(1);
-        m.addAnswer("10", 10, "OK");
-        m.addAnswer("100", 100, "OK");
-        m.addAnswer("1000", 1000, "OK");
-
-        lang.addMCQuestion(m);*/
 
         for(int i = 0; i < numberOfIterations - 1; i++) {
 
@@ -137,9 +144,13 @@ public class GibbsSampling implements ValidatingGenerator {
         }
 
         code.highlight(6);
+
+        lang.nextStep();
+
+        code.unhighlight(6);
         code.highlight(7);
 
-        lang.nextStep(translator.translateMessage("outro"));
+        lang.nextStep(translator.translateMessage("outroTOC"));
 
         showOutro();
 
@@ -155,8 +166,6 @@ public class GibbsSampling implements ValidatingGenerator {
         props.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
                 Font.SANS_SERIF, Font.PLAIN, 16));
 
-        String text = getDescription();
-
         /* TODO add content:
         - wofür brauchen wir gibbs sampling
         - Beispielnetzwerk erklären (Abhängigkeiten)
@@ -164,11 +173,24 @@ public class GibbsSampling implements ValidatingGenerator {
         - posterior probability erklären
          */
 
-        Text intro = lang.newText(new Coordinates(20, 80), text, null, null, props);
+        String text = translator.translateMessage("intro");
+
+        final int lineBreakSize = 16 + 3;
+        String[] parts = text.split("\n");
+        Text[] intro_ts = new Text[parts.length];
+
+        int lineCounter = 0;
+        for(String textPart : parts){
+            int yOffset = lineBreakSize * lineCounter;
+            Text intro = lang.newText(new Coordinates(20, 70 + yOffset), textPart, null, null, props);
+            intro_ts[lineCounter] = intro;
+            lineCounter++;
+        }
 
         lang.nextStep();
 
-        intro.hide();
+        for(Text intro : intro_ts)
+            intro.hide();
     }
 
     private void showOutro() {
@@ -180,9 +202,33 @@ public class GibbsSampling implements ValidatingGenerator {
         props.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
                 Font.SANS_SERIF, Font.PLAIN, 16));
 
-        String text = "outro";       // TODO add summary total number of iterations, sample count, (posterior probability (true/false)
 
-        Text outro = lang.newText(new Coordinates(20, 80), text, null, null, props);
+        // TODO add summary total number of iterations, sample count, (posterior probability (true/false)
+        String text = translator.translateMessage("outro");
+
+
+        final int lineBreakSize = 16 + 3;  // font size + gap
+        String[] parts = text.split("\n");
+        Text[] outro_ts = new Text[parts.length];
+
+        int lineCounter = 0;
+        for(String textPart : parts){
+            int yOffset = lineBreakSize * lineCounter;
+            Text outro = lang.newText(new Coordinates(20, 70 + yOffset), textPart, "outroline"+lineCounter, null, props);
+            outro_ts[lineCounter] = outro;
+            lineCounter++;
+        }
+
+        Text iterationDisplay = lang.newText(new Offset(0, 30, "outroline"+(lineCounter-1), AnimalScript.DIRECTION_NW), "Iteration: "+iteration,
+                "iterationDisplayOutro", null, props);
+
+        Text propTrueDisplay = lang.newText(new Offset(0, 30, "iterationDisplayOutro", AnimalScript.DIRECTION_NW),
+                "P( X=true | A="+bn.values.get(bn.A)+", B="+bn.values.get(bn.B)+" ) = "+normalizedSamplesX[1],
+                "propTrueDisplayOutro", null, props);
+
+        Text propFalseDisplay = lang.newText(new Offset(0, 30, "propTrueDisplayOutro", AnimalScript.DIRECTION_NW),
+                "P( X=false | A="+bn.values.get(bn.A)+", B="+bn.values.get(bn.B)+" ) = "+normalizedSamplesX[0],
+                "propFalseDisplayOutro", null, props);
 
         lang.nextStep();
     }
@@ -303,8 +349,7 @@ public class GibbsSampling implements ValidatingGenerator {
         return "Moritz Schramm, Moritz Andres";
     }
 
-    public String getDescription(){
-        //return "Bayessche Netze werden dazu genutzt, um Abhängigkeiten zwischen Zufallsvariablen zu modellieren und Wahrscheinlichkeiten von Ereignissen zu berechnen. Exakte Inferenz, d.h. die Bestimmung einer bedingten Wahrscheinlichkeit, ist in solchen Netzen allerdings ein NP-hartes Problem, weswegen man mit Sampling Methoden zumindest eine annähernd exakte Inferenz erreichen will.<br>Hier wird Gibbs Sampling genutzt, ein Markov Chain Monte Carlo Algorithmus. Dieser beginnt in einem willkürlichen Zustand und erzeugt jede Iteration einen neuen Zustand, indem ein Wert durch ein zufälliges Sample einer Zufallsvariable erzeugt wird. Die Wahrscheinlichkeit einen bestimmten Wert zu samplen hängt dabei von den vorher festgeletgten bedingten Wahrscheinlichkeiten der Zufallsvariablen ab.";
+    public String getDescription() {
         return translator.translateMessage("description");
     }
 
@@ -332,7 +377,7 @@ public class GibbsSampling implements ValidatingGenerator {
     }
 
     public Locale getContentLocale() {
-        return Locale.GERMAN;
+        return locale;
     }
 
     public GeneratorType getGeneratorType() {
@@ -352,6 +397,7 @@ public class GibbsSampling implements ValidatingGenerator {
             if (key.equals("Seed") || key.equals("Anzahl Iterationen")) {
                 int i = (int) primitives.get(key);
                 if (i <= 0) return false;
+                continue;
             }
 
             double v = (double) primitives.get(key);
@@ -366,28 +412,32 @@ public class GibbsSampling implements ValidatingGenerator {
 
         Generator generator = new GibbsSampling("resources/gibbssampling", Locale.GERMANY);
         generator.init();
-        animal.main.Animal.startGeneratorWindow(generator);
 
+        if(args[0].equals("generator")) {
 
+            animal.main.Animal.startGeneratorWindow(generator);
 
-        /*Hashtable<String, Object> primitives = new Hashtable<>();
-        primitives.put("Seed", 1234);
+        } else if (args[0].equals("animation ")) {
 
-        primitives.put("Anzahl Iterationen", 10);
+            Hashtable<String, Object> primitives = new Hashtable<>();
+            primitives.put("Seed", 1234);
 
-        primitives.put("P(Y)", 0.8);
-        primitives.put("P(X | Y=true)", 0.4);
-        primitives.put("P(X | Y=false)", 0.7);
-        primitives.put("P(A | Y=true)", 0.1);
-        primitives.put("P(A | Y=false)", 0.2);
-        primitives.put("P(B | A=true, X=true)", 0.9);
-        primitives.put("P(B | A=true, X=false)", 0.99);
-        primitives.put("P(B | A=false, X=true)", 0.3);
-        primitives.put("P(B | A=false, X=false)", 0.6);
+            primitives.put("Anzahl Iterationen", 10);
 
-        primitives.put("A", false);
-        primitives.put("B", true);
+            primitives.put("P(Y)", 0.8);
+            primitives.put("P(X | Y=true)", 0.4);
+            primitives.put("P(X | Y=false)", 0.7);
+            primitives.put("P(A | Y=true)", 0.1);
+            primitives.put("P(A | Y=false)", 0.2);
+            primitives.put("P(B | A=true, X=true)", 0.9);
+            primitives.put("P(B | A=true, X=false)", 0.99);
+            primitives.put("P(B | A=false, X=true)", 0.3);
+            primitives.put("P(B | A=false, X=false)", 0.6);
 
-        System.out.println(generator.generate(null, primitives));*/
+            primitives.put("A", false);
+            primitives.put("B", true);
+
+            System.out.println(generator.generate(null, primitives));
+        }
     }
 }
