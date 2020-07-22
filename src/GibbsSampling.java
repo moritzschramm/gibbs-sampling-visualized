@@ -54,15 +54,14 @@ public class GibbsSampling implements ValidatingGenerator {
     public GibbsSampling(String resourceName, Locale locale) {
         this.resourceName = resourceName;
         this.locale = locale;
+
+        translator = new Translator(resourceName, locale);
     }
 
     public void init() {
         lang = new AnimalScript("Gibbs Sampling", "Moritz Schramm, Moritz Andres", 800, 600);
         lang.setStepMode(true);
         lang.setInteractionType(Language.INTERACTION_TYPE_AVINTERACTION);
-
-
-        translator = new Translator(resourceName, locale);
 
         random = new Random();
 
@@ -134,15 +133,6 @@ public class GibbsSampling implements ValidatingGenerator {
         lang.nextStep();
 
         sample();
-
-        /*MultipleChoiceQuestionModel m = new MultipleChoiceQuestionModel("samples");
-        m.setPrompt("Wie oft soll noch gesamplet werden?");
-        m.setNumberOfTries(1);
-        m.addAnswer("10", 10, "OK");
-        m.addAnswer("100", 100, "OK");
-        m.addAnswer("1000", 1000, "OK");
-
-        lang.addMCQuestion(m);*/
 
         for(int i = 0; i < numberOfIterations - 1; i++) {
 
@@ -386,7 +376,7 @@ public class GibbsSampling implements ValidatingGenerator {
     }
 
     public Locale getContentLocale() {
-        return Locale.GERMAN;
+        return locale;
     }
 
     public GeneratorType getGeneratorType() {
