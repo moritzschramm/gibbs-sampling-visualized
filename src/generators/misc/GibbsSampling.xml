@@ -8,7 +8,7 @@
 		</Primitive>
 
 		<Primitive type="int">
-			<name>Anzahl Iterationen</name>
+			<name>NumberOfSamples</name>
 			<value><int>10</int></value>
 			<description>Die Anzahl der Iterationen</description>
 		</Primitive>

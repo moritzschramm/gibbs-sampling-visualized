@@ -88,7 +88,7 @@ public class GibbsSampling implements ValidatingGenerator {
         random.setSeed((int) primitives.get("Seed"));
 
         // set number of iterations
-        numberOfIterations = (int) primitives.get("Anzahl Iterationen");
+        numberOfIterations = (int) primitives.get("NumberOfSamples");
 
         // init probabilities and values
         bn.setProbabilitiesAndValues(primitives);
@@ -119,7 +119,7 @@ public class GibbsSampling implements ValidatingGenerator {
         // add source code (unhighlighted)
         code.add();
 
-        lang.nextStep(translator.translateMessage("firstIterationTOC"));
+        lang.nextStep("1. Iteration");
 
         code.highlight(0);
 
@@ -139,7 +139,7 @@ public class GibbsSampling implements ValidatingGenerator {
 
 
             code.highlight(0);
-            lang.nextStep();
+            lang.nextStep((i + 2) + ". Iteration");
             sample();
         }
 
@@ -165,13 +165,6 @@ public class GibbsSampling implements ValidatingGenerator {
         TextProperties props = new TextProperties();
         props.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
                 Font.SANS_SERIF, Font.PLAIN, 16));
-
-        /* TODO add content:
-        - wofür brauchen wir gibbs sampling
-        - Beispielnetzwerk erklären (Abhängigkeiten)
-        - verwendete Farben erklären
-        - posterior probability erklären
-         */
 
         String text = translator.translateMessage("intro");
 
@@ -202,8 +195,6 @@ public class GibbsSampling implements ValidatingGenerator {
         props.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
                 Font.SANS_SERIF, Font.PLAIN, 16));
 
-
-        // TODO add summary total number of iterations, sample count, (posterior probability (true/false)
         String text = translator.translateMessage("outro");
 
 
@@ -394,7 +385,7 @@ public class GibbsSampling implements ValidatingGenerator {
 
             if (key.equals("A") || key.equals("B")) continue;
 
-            if (key.equals("Seed") || key.equals("Anzahl Iterationen")) {
+            if (key.equals("Seed") || key.equals("NumberOfSamples")) {
                 int i = (int) primitives.get(key);
                 if (i <= 0) return false;
                 continue;
