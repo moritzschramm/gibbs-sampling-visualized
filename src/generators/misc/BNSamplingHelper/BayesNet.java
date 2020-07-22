@@ -1,4 +1,4 @@
-package generators.misc.GibbsSamplingHelper;
+package generators.misc.BNSamplingHelper;
 
 import algoanim.primitives.Graph;
 import algoanim.primitives.generators.Language;

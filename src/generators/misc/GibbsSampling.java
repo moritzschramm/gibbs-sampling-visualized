@@ -5,7 +5,7 @@
  */
 package generators.misc;
 
-import generators.misc.GibbsSamplingHelper.*;
+import generators.misc.BNSamplingHelper.*;
 import algoanim.primitives.Text;
 import algoanim.properties.*;
 import generators.framework.Generator;
