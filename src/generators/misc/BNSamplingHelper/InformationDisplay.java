@@ -11,37 +11,43 @@ import algoanim.util.Offset;
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.Hashtable;
 import java.util.Locale;
 
 public class InformationDisplay {
 
     private Language lang;
     private BayesNet bn;
+    private String[] sampleVars;
+    private String of;
+    private String normValue;
 
     private Text iterationDisplay;
-    private Text sampleXDisplay;
-    private Text normalizedSampleXDisplay;
+    private Text sampleDisplay;
+    private Text normalizedSampleDisplay;
     private Text varDisplay;
     private Text childVarDisplay;
     private Text probabilityDisplay;
 
-    private int[] samplesX;
-    private int[] samplesY;
-    private double[] normalizedSamplesX;
-    private double[] normalizedSamplesY;
+    private Hashtable<String, Integer> samples;
+    private Hashtable<String, Double> normalizedSamples;
 
 
-    public InformationDisplay(Language lang, BayesNet bn, int[] samplesX, int[] samplesY, double[] normalizedSamplesX, double[] normalizedSamplesY) {
+    public InformationDisplay(Language lang, BayesNet bn,
+                              Hashtable<String, Integer> samples, Hashtable<String, Double> normalizedSamples) {
 
         this.lang = lang;
         this.bn = bn;
-        this.samplesX = samplesX;
-        this.samplesY = samplesY;
-        this.normalizedSamplesX = normalizedSamplesX;
-        this.normalizedSamplesY = normalizedSamplesY;
+        this.samples = samples;
+        this.normalizedSamples = normalizedSamples;
     }
 
+    public void init(String[] sampleVars, String of, String normValue) {
 
+        this.sampleVars = sampleVars;
+        this.of = of;
+        this.normValue = normValue;
+    }
 
     public void add() {
 
@@ -49,16 +55,16 @@ public class InformationDisplay {
         props.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
                 Font.SANS_SERIF, Font.PLAIN, 16));
 
-        iterationDisplay = lang.newText(new Coordinates(350, 70), "Iteration: 0",
+        iterationDisplay = lang.newText(new Offset(50, 0, "explanation", AnimalScript.DIRECTION_NE), "Iteration: 0",
                 "iterationDisplay", null, props);
-        sampleXDisplay = lang.newText(new Offset(0, 25, "iterationDisplay",
-                AnimalScript.DIRECTION_NW), "Samples X: (" + samplesX[1] + ", " + samplesX[0] + ")",
+        sampleDisplay = lang.newText(new Offset(0, 25, "iterationDisplay",
+                AnimalScript.DIRECTION_NW), getSampleCount("Sample (true, false) " + of + " "),
                 "sampleXDisplay", null, props);
 
-        normalizedSampleXDisplay =
+        normalizedSampleDisplay =
                 lang.newText(new Offset(0, 25, "sampleXDisplay",
                         AnimalScript.DIRECTION_NW),
-                        bn.key(BayesNet.X, BayesNet.A, BayesNet.B)+" = (" + normalizedSamplesX[1] + ", " +normalizedSamplesX[0] + ")",
+                        getSampleCount(normValue+" (true, false) " + of + " "),
                         "normalizedSampleXDisplay", null, props);
 
         props.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(Font.SANS_SERIF, Font.BOLD, 16));
@@ -74,13 +80,9 @@ public class InformationDisplay {
 
     public void updateInformation(int iteration) {
 
-        DecimalFormat df = new DecimalFormat("0.0##", new DecimalFormatSymbols(Locale.ENGLISH));
-
         iterationDisplay.setText("Iteration: " + iteration, null, null);
-        sampleXDisplay.setText("Samples X: (" + samplesX[1] + ", " + samplesX[0] + ")", null, null);
-        normalizedSampleXDisplay
-                .setText(bn.key(BayesNet.X, BayesNet.A, BayesNet.B)+" = ("+ df.format(normalizedSamplesX[1])
-                        + ", " + df.format(normalizedSamplesX[0]) + ")", null, null);
+        sampleDisplay.setText(getSampleCount("Sample (true, false) " + of + " "), null, null);
+        normalizedSampleDisplay.setText(getNormalizedSampleCount(normValue+" (true, false) " + of + " "), null, null);
     }
 
     public void updateVars(String var, String childVar, Double probability) {
@@ -95,5 +97,64 @@ public class InformationDisplay {
 
         if(probability != null) probabilityDisplay.setText("p = " + df.format(probability), null, null);
         else probabilityDisplay.setText("", null, null);
+    }
+
+    public String getSampleCount(final String prefix) {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(prefix);
+
+        String conc = "";
+        for(String var: sampleVars) {
+            sb.append(conc);
+            conc = ", ";
+            sb.append(var);
+        }
+
+        sb.append(": ");
+
+        conc = "";
+        for(String var: sampleVars) {
+            sb.append(conc);
+            conc = ", ";
+
+            sb.append("(");
+            sb.append(samples.get(var+"=true") == null ? 0 : samples.get(var+"=true"));
+            sb.append(", ");
+            sb.append(samples.get(var+"=false") == null ? 0 : samples.get(var+"=false"));
+            sb.append(")");
+        }
+
+        return sb.toString();
+    }
+
+    public String getNormalizedSampleCount(final String prefix) {
+
+        DecimalFormat df = new DecimalFormat("0.0##", new DecimalFormatSymbols(Locale.ENGLISH));
+        StringBuilder sb = new StringBuilder();
+        sb.append(prefix);
+
+        String conc = "";
+        for(String var: sampleVars) {
+            sb.append(conc);
+            conc = ", ";
+            sb.append(var);
+        }
+
+        sb.append(": ");
+
+        conc = "";
+        for(String var: sampleVars) {
+            sb.append(conc);
+            conc = ", ";
+
+            sb.append("(");
+            sb.append(normalizedSamples.get(var+"=true") == null ? 0 : df.format(normalizedSamples.get(var+"=true")));
+            sb.append(", ");
+            sb.append(normalizedSamples.get(var+"=false") == null ? 0 : df.format(normalizedSamples.get(var+"=false")));
+            sb.append(")");
+        }
+
+        return sb.toString();
     }
 }

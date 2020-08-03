@@ -20,26 +20,27 @@ public class Code {
     private Translator translator;
     private SourceCode sc;
     private SourceCode exp;
+    private SourceCodeProperties scp;
 
     public Code(Language lang, Translator translator) {
         this.lang = lang;
         this.translator = translator;
     }
 
+    public void init(SourceCodeProperties scp) {
+
+        this.scp = scp;
+    }
+
     public void add() {add(20, 50);}
     public void add(int x, int y) {
 
-        SourceCodeProperties sourceCodeProps = new SourceCodeProperties();
-        sourceCodeProps.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
-                Font.MONOSPACED, Font.PLAIN, 16));
-        sourceCodeProps.set(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY, Color.RED);
-
         SourceCodeProperties expCodeProps = new SourceCodeProperties();
         expCodeProps.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
-                Font.SANS_SERIF, Font.PLAIN, 16));
+                Font.SANS_SERIF, Font.ITALIC, 16));
         expCodeProps.set(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY, Color.RED);
 
-        exp = lang.newSourceCode(new Coordinates(x, y), "explanation", null, sourceCodeProps);
+        exp = lang.newSourceCode(new Coordinates(x, y), "explanation", null, expCodeProps);
         exp.addCodeLine("1. "+translator.translateMessage("line0"), null, 0, null);
         exp.addCodeLine("2. "+translator.translateMessage("line1"), null, 0, null);
         exp.addCodeLine("3. "+translator.translateMessage("line2"), null, 0, null);
@@ -49,8 +50,8 @@ public class Code {
         exp.addCodeLine("7. "+translator.translateMessage("line6"), null, 0, null);
         exp.addCodeLine("8. "+translator.translateMessage("line7"), null, 0, null);
 
-        sc = lang.newSourceCode(new Offset(0, 30, "explanation", AnimalScript.DIRECTION_NW), "sourceCode",
-                null, sourceCodeProps);
+        sc = lang.newSourceCode(new Offset(0, 10, "explanation", AnimalScript.DIRECTION_SW), "sourceCode",
+                null, scp);
 
         sc.addCodeLine("for i = 1 to NumberOfSamples:", null, 0*INDENTATION_WIDTH, null);                         // 0
         sc.addCodeLine("for each Var in NonevidenceVars:", null, 1*INDENTATION_WIDTH, null);                      // 1

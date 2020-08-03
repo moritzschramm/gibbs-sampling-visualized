@@ -5,6 +5,7 @@
  */
 package generators.misc;
 
+import algoanim.primitives.Graph;
 import generators.misc.BNSamplingHelper.*;
 import algoanim.primitives.Text;
 import algoanim.properties.*;
@@ -42,11 +43,11 @@ public class GibbsSampling implements ValidatingGenerator {
     private int iteration = 0;
     private int numberOfIterations = 10;
 
-    // contains sum of sample values (sampleX[0]: samples when X is false, sampleX[1]: samples when X is true)
-    private int[] samplesX;
-    private int[] samplesY;
-    private double[] normalizedSamplesX;
-    private double[] normalizedSamplesY;
+    // variables and their sample counts
+    private String[] vars;
+    private String[] sampleVars;
+    private Hashtable<String, Integer> samples;
+    private Hashtable<String, Double> normalizedSamples;
 
     // for questions
     private String WRONG_ASW;
@@ -67,14 +68,13 @@ public class GibbsSampling implements ValidatingGenerator {
         random = new Random();
 
         iteration = 0;
-        samplesX = new int[2];
-        samplesY = new int[2];
-        normalizedSamplesX = new double[2];
-        normalizedSamplesY = new double[2];
+
+        samples = new Hashtable<>();
+        normalizedSamples = new Hashtable<>();
 
         code = new Code(lang, translator);
         bn = new BayesNet(lang);
-        info = new InformationDisplay(lang, bn, samplesX, samplesY, normalizedSamplesX, normalizedSamplesY);
+        info = new InformationDisplay(lang, bn, samples, normalizedSamples);
 
 
         RIGHT_ASW = translator.translateMessage("right_asw");
@@ -84,20 +84,35 @@ public class GibbsSampling implements ValidatingGenerator {
     /* methods used to create animation */
     public String generate(AnimationPropertiesContainer props, Hashtable<String, Object> primitives) {
 
+        // init vars and sample arrays
+        vars = (String []) primitives.get("Variables");
+        sampleVars = (String []) primitives.get("Non-evidence variables");
+
         // set seed
         random.setSeed((int) primitives.get("Seed"));
 
         // set number of iterations
         numberOfIterations = (int) primitives.get("NumberOfSamples");
 
-        // init probabilities and values
-        bn.setProbabilitiesAndValues(primitives);
+        // init graph, probabilities and values
+        GraphProperties graphProps = new GraphProperties();
+        graphProps.set(AnimationPropertiesKeys.NAME, "graphProps");
+        graphProps.set(AnimationPropertiesKeys.DIRECTED_PROPERTY, true);
+        graphProps.set(AnimationPropertiesKeys.FILLED_PROPERTY, false);
+        graphProps.set(AnimationPropertiesKeys.FILL_PROPERTY, Color.WHITE);
+        graphProps.set(AnimationPropertiesKeys.EDGECOLOR_PROPERTY, Color.BLACK);
+        graphProps.set(AnimationPropertiesKeys.ELEMHIGHLIGHT_PROPERTY, Color.BLACK);
+        graphProps.set(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY, Color.GREEN);
+        graphProps.set(AnimationPropertiesKeys.NODECOLOR_PROPERTY, Color.BLACK);
+        graphProps.set(AnimationPropertiesKeys.WEIGHTED_PROPERTY, false);
+        //bn.init(primitives, props, vars, sampleVars);
+        bn.init(primitives, graphProps, vars, sampleVars);
 
 
         // header creation
         TextProperties headerProps = new TextProperties();
         headerProps.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
-                Font.SANS_SERIF, Font.BOLD, 24));
+                Font.SANS_SERIF, Font.BOLD | Font.ITALIC, 24));
         header = lang.newText(new Coordinates(20, 30), "Gibbs Sampling",
                 "header", null, headerProps);
 
@@ -106,18 +121,22 @@ public class GibbsSampling implements ValidatingGenerator {
         // show introduction text (creates new step)
         showIntro();
 
-        // graph creation
-        bn.add();
+        // add source code (unhighlighted)
+        SourceCodeProperties sourceCodeProps = new SourceCodeProperties();
+        sourceCodeProps.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
+                Font.MONOSPACED, Font.PLAIN, 16));
+        sourceCodeProps.set(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY, Color.RED);
+        sourceCodeProps.set(AnimationPropertiesKeys.NAME, "sourceCode");
+        //code.init((SourceCodeProperties) props.getPropertiesByName("sourceCode"));
+        code.init(sourceCodeProps);
+        code.add();
 
         // show additional information
+        info.init(sampleVars, translator.translateMessage("of"), translator.translateMessage("normValue"));
         info.add();
 
-        // highlight evidence vars (value won't be changing, highlight color will stay the same)
-        bn.highlightNode(BayesNet.A, bn.values.get(BayesNet.A) ? Color.GREEN : Color.RED);
-        bn.highlightNode(BayesNet.B, bn.values.get(BayesNet.B) ? Color.GREEN : Color.RED);
-
-        // add source code (unhighlighted)
-        code.add();
+        // graph creation
+        bn.add();
 
         lang.nextStep("1. Iteration");
 
@@ -214,11 +233,11 @@ public class GibbsSampling implements ValidatingGenerator {
                 "iterationDisplayOutro", null, props);
 
         Text propTrueDisplay = lang.newText(new Offset(0, 30, "iterationDisplayOutro", AnimalScript.DIRECTION_NW),
-                "P( X=true | A="+bn.values.get(bn.A)+", B="+bn.values.get(bn.B)+" ) = "+normalizedSamplesX[1],
+                info.getSampleCount("Sample (true, false) " + translator.translateMessage("of") + " "),
                 "propTrueDisplayOutro", null, props);
 
         Text propFalseDisplay = lang.newText(new Offset(0, 30, "propTrueDisplayOutro", AnimalScript.DIRECTION_NW),
-                "P( X=false | A="+bn.values.get(bn.A)+", B="+bn.values.get(bn.B)+" ) = "+normalizedSamplesX[0],
+                info.getNormalizedSampleCount(translator.translateMessage("normValue")+" (true, false) " + translator.translateMessage("of") + " "),
                 "propFalseDisplayOutro", null, props);
 
         lang.nextStep();
@@ -227,19 +246,18 @@ public class GibbsSampling implements ValidatingGenerator {
 
 
     /* algorithm */
-
     private void sample() {
 
         iteration++;
         info.updateInformation(iteration);
 
-        for(String var: new String[]{BayesNet.Y, BayesNet.X}) {
+        for(String var: sampleVars) {
 
             code.unhighlight(0);
             code.unhighlight(6);
             code.highlight(1);
 
-            bn.highlightNode(var, Color.GRAY);
+            bn.highlightNode(var, BayesNet.HIGHLIGHT_COLOR);
             info.updateVars(var, null, null);
 
             lang.nextStep();
@@ -259,7 +277,7 @@ public class GibbsSampling implements ValidatingGenerator {
                 code.unhighlight(4);
                 code.highlight(3);
 
-                bn.highlightNode(child, Color.LIGHT_GRAY);
+                bn.highlightNode(child, BayesNet.SELECT_COLOR);
 
                 info.updateVars(var, child, p);
 
@@ -272,7 +290,7 @@ public class GibbsSampling implements ValidatingGenerator {
                 code.unhighlight(3);
                 code.highlight(4);
 
-                bn.highlightNode(child, bn.values.get(child) ? Color.GREEN : Color.RED);
+                bn.highlightNode(child, bn.values.get(child) ? BayesNet.TRUE_COLOR : BayesNet.FALSE_COLOR);
 
                 lang.nextStep();
             }
@@ -309,20 +327,15 @@ public class GibbsSampling implements ValidatingGenerator {
 
     private void increaseSampleCount(String var, boolean value) {
 
-        if(var.equals(BayesNet.X)) {
+        String key = var + (value ? "=true" : "=false");
+        samples.put(key, (samples.get(key) == null ? 0 : samples.get(key)) + 1);
 
-            samplesX[value ? 1 : 0]++;
-            double sum = samplesX[0] + samplesX[1];
-            normalizedSamplesX[0] = samplesX[0] / sum;
-            normalizedSamplesX[1] = samplesX[1] / sum;
-
-        } else if (var.equals(BayesNet.Y)) {
-
-            samplesY[value ? 1 : 0]++;
-            double sum = samplesY[0] + samplesY[1];
-            normalizedSamplesY[0] = samplesY[0] / sum;
-            normalizedSamplesY[1] = samplesY[1] / sum;
-        }
+        double trueVal = samples.get(var+"=true") == null ? 0 : samples.get(var+"=true");
+        double falseVal = samples.get(var+"=false") == null ? 0 : samples.get(var+"=false");
+        double sum = trueVal + falseVal;
+        sum = sum == 0 ? 1 : sum;
+        normalizedSamples.put(var+"=true", trueVal / sum);
+        normalizedSamples.put(var+"=false", falseVal / sum);
     }
 
 
@@ -383,17 +396,18 @@ public class GibbsSampling implements ValidatingGenerator {
 
         for(String key: primitives.keySet()) {
 
-            if (key.equals("A") || key.equals("B")) continue;
-
-            if (key.equals("Seed") || key.equals("NumberOfSamples")) {
-                int i = (int) primitives.get(key);
-                if (i <= 0) return false;
-                continue;
+            switch (key) {
+                case "Seed": case "NumberOfSamples":
+                    int i = (int) primitives.get(key);
+                    if (i <= 0) return false;
+                    break;
+                case "Variables": case "Non-evidence variables":
+                    String [] tmp = (String []) primitives.get(key);
+                    if (tmp.length > 4) return false;
+                    break;
+                // TODO check probability table
+                // TODO at least check counts of string arrays
             }
-
-            double v = (double) primitives.get(key);
-
-            if (v < 0.0 || v > 1.0) return false;
         }
 
         return true;
@@ -408,27 +422,78 @@ public class GibbsSampling implements ValidatingGenerator {
 
             animal.main.Animal.startGeneratorWindow(generator);
 
-        } else if (args[0].equals("animation ")) {
+        } else if (args[0].equals("animation")) {
 
             Hashtable<String, Object> primitives = new Hashtable<>();
+            AnimationPropertiesContainer props = new AnimationPropertiesContainer();
+
             primitives.put("Seed", 1234);
+            primitives.put("NumberOfSamples", 10);
+            primitives.put("Variables", new String[]{"Y", "A", "X", "B"});
+            primitives.put("Non-evidence variables", new String[]{"Y", "X"});
+            primitives.put("Values", new String[]{"true", "false"});
 
-            primitives.put("Anzahl Iterationen", 10);
+            GraphProperties graphProps = new GraphProperties();
+            graphProps.set(AnimationPropertiesKeys.NAME, "graphProps");
+            graphProps.set(AnimationPropertiesKeys.DIRECTED_PROPERTY, true);
+            graphProps.set(AnimationPropertiesKeys.FILLED_PROPERTY, false);
+            graphProps.set(AnimationPropertiesKeys.FILL_PROPERTY, Color.WHITE);
+            graphProps.set(AnimationPropertiesKeys.EDGECOLOR_PROPERTY, Color.BLACK);
+            graphProps.set(AnimationPropertiesKeys.ELEMHIGHLIGHT_PROPERTY, Color.BLACK);
+            graphProps.set(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY, Color.GREEN);
+            graphProps.set(AnimationPropertiesKeys.NODECOLOR_PROPERTY, Color.BLACK);
+            graphProps.set(AnimationPropertiesKeys.WEIGHTED_PROPERTY, false);
 
-            primitives.put("P(Y)", 0.8);
-            primitives.put("P(X | Y=true)", 0.4);
-            primitives.put("P(X | Y=false)", 0.7);
-            primitives.put("P(A | Y=true)", 0.1);
-            primitives.put("P(A | Y=false)", 0.2);
-            primitives.put("P(B | A=true, X=true)", 0.9);
-            primitives.put("P(B | A=true, X=false)", 0.99);
-            primitives.put("P(B | A=false, X=true)", 0.3);
-            primitives.put("P(B | A=false, X=false)", 0.6);
+            int[][] adjacencyMatrix = new int[4][4];
+            for(int i = 0; i < adjacencyMatrix.length; i++)
+                for(int j = 0; j < adjacencyMatrix.length; j++)
+                    adjacencyMatrix[i][j] = 0;
 
-            primitives.put("A", false);
-            primitives.put("B", true);
+            adjacencyMatrix[0][1] = 1;
+            adjacencyMatrix[0][2] = 1;
+            adjacencyMatrix[1][3] = 1;
+            adjacencyMatrix[2][3] = 1;
 
-            System.out.println(generator.generate(null, primitives));
+            Node[] nodes = new Node[4];
+            int offsetX = 550; int offsetY = 160;
+            nodes[0] = new Coordinates(offsetX+150, offsetY+100);
+            nodes[1] = new Coordinates(offsetX+50, offsetY+150);
+            nodes[2] = new Coordinates(offsetX+250, offsetY+150);
+            nodes[3] = new Coordinates(offsetX+150, offsetY+200);
+
+            Language lang = new AnimalScript("Gibbs Sampling", "Moritz Schramm, Moritz Andres", 800, 600);
+            Graph graph = lang.newGraph("bn", adjacencyMatrix, nodes, new String[]{"Y", "A", "X", "B"}, null, graphProps);
+
+            primitives.put("graph", graph);
+
+            int[][] p = new int[4][4];
+
+            p[0][0] = 30;   // P(Y)
+            p[0][1] = 10;   // P(A|Y=true)
+            p[1][1] = 20;   // P(A|Y=false)
+            p[0][2] = 40;   // P(X|Y=true)
+            p[1][2] = 70;   // P(X|Y=false)
+            p[0][3] = 90;   // P(B | A=true, X=true)
+            p[1][3] = 99;   // P(B | A=true, X=false)
+            p[2][3] = 30;   // P(B | A=false, X=true)
+            p[3][3] = 60;   // P(B | A=false, X=false)
+
+            primitives.put("Probabilities", p);
+
+            primitives.put("Highlight Color", Color.GRAY);
+            primitives.put("Select Color", Color.LIGHT_GRAY);
+            primitives.put("True Color", Color.GREEN);
+            primitives.put("False Color", Color.RED);
+
+            SourceCodeProperties sourceCodeProps = new SourceCodeProperties();
+            sourceCodeProps.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
+                    Font.MONOSPACED, Font.PLAIN, 16));
+            sourceCodeProps.set(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY, Color.RED);
+            sourceCodeProps.set(AnimationPropertiesKeys.NAME, "sourceCode");
+
+            props.add(sourceCodeProps);
+
+            System.out.println(generator.generate(props, primitives));
         }
     }
 }
