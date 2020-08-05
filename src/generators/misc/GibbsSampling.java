@@ -132,14 +132,14 @@ public class GibbsSampling implements ValidatingGenerator {
         code.add();
 
         // show additional information
-        info.init(sampleVars, translator.translateMessage("of"), translator.translateMessage("normValue"));
+        info.init(sampleVars, translator, primitives);
         info.add();
 
         // graph creation
         bn.add();
 
-        lang.nextStep("1. Iteration");
-
+        iteration++;
+        info.updateInformation(iteration);
         code.highlight(0);
 
         MultipleChoiceQuestionModel question1 = new MultipleChoiceQuestionModel("q1");
@@ -150,15 +150,16 @@ public class GibbsSampling implements ValidatingGenerator {
         question1.addAnswer(translator.translateMessage("q1_asw3"), 1, RIGHT_ASW + feedback_q1);
         lang.addMCQuestion(question1);
 
-        lang.nextStep();
+        lang.nextStep("1. Iteration");
 
         sample();
 
         for(int i = 0; i < numberOfIterations - 1; i++) {
 
-
             code.highlight(0);
-            lang.nextStep((i + 2) + ". Iteration");
+            iteration++;
+            info.updateInformation(iteration);
+            lang.nextStep(iteration + ". Iteration");
             sample();
         }
 
@@ -248,9 +249,6 @@ public class GibbsSampling implements ValidatingGenerator {
     /* algorithm */
     private void sample() {
 
-        iteration++;
-        info.updateInformation(iteration);
-
         for(String var: sampleVars) {
 
             code.unhighlight(0);
@@ -258,13 +256,13 @@ public class GibbsSampling implements ValidatingGenerator {
             code.highlight(1);
 
             bn.highlightNode(var, BayesNet.HIGHLIGHT_COLOR);
-            info.updateVars(var, null, null);
+            info.updateVars(var, null, null, null);
 
             lang.nextStep();
 
             double p = bn.probabilities.get(bn.key(var, bn.parents(var)));
 
-            info.updateVars(var, null, p);
+            info.updateVars(var, null, p, null);
 
             code.unhighlight(1);
             code.highlight(2);
@@ -279,13 +277,15 @@ public class GibbsSampling implements ValidatingGenerator {
 
                 bn.highlightNode(child, BayesNet.SELECT_COLOR);
 
-                info.updateVars(var, child, p);
+                info.updateVars(var, child, p, -1.0);
 
                 lang.nextStep();
 
-                p *= bn.probabilities.get(bn.key(child, bn.parents(child)));
+                double prob = bn.probabilities.get(bn.key(child, bn.parents(child)));
 
-                info.updateVars(var, child, p);
+                p *= prob;
+
+                info.updateVars(var, child, p, prob);
 
                 code.unhighlight(3);
                 code.highlight(4);
@@ -298,26 +298,28 @@ public class GibbsSampling implements ValidatingGenerator {
             code.unhighlight(4);
             code.highlight(5);
 
-            lang.nextStep();
-
             boolean value = createSampleValue(p);
 
             bn.values.put(var, value);
 
             bn.highlightNode(var, value ? Color.GREEN : Color.RED);
 
+            lang.nextStep();
+
             code.unhighlight(5);
             code.highlight(6);
 
-            lang.nextStep();
 
             increaseSampleCount(var, value);
+
             info.updateInformation(iteration);
+
+            lang.nextStep();
 
             code.unhighlight(6);
         }
 
-        info.updateVars(null, null, null);
+        info.updateVars(null, null, null, null);
     }
 
     private boolean createSampleValue(double p) {
@@ -401,12 +403,13 @@ public class GibbsSampling implements ValidatingGenerator {
                     int i = (int) primitives.get(key);
                     if (i <= 0) return false;
                     break;
-                case "Variables": case "Non-evidence variables":
+                case "Variables": case "Non-evidence variables": case "Values":
                     String [] tmp = (String []) primitives.get(key);
                     if (tmp.length > 4) return false;
                     break;
-                // TODO check probability table
-                // TODO at least check counts of string arrays
+                case "Probabilities":
+                    int[][] p = (int[][]) primitives.get(key);
+                    if(p.length < 1) return false;
             }
         }
 
@@ -455,7 +458,7 @@ public class GibbsSampling implements ValidatingGenerator {
             adjacencyMatrix[2][3] = 1;
 
             Node[] nodes = new Node[4];
-            int offsetX = 550; int offsetY = 160;
+            int offsetX = 600; int offsetY = 180;
             nodes[0] = new Coordinates(offsetX+150, offsetY+100);
             nodes[1] = new Coordinates(offsetX+50, offsetY+150);
             nodes[2] = new Coordinates(offsetX+250, offsetY+150);
