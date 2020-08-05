@@ -6,13 +6,12 @@
 			<value><Graph>%graphscript
 
 graph 4
+graphcoordinates at 0 0
 
-graphcoordinates at 600 180
-
-node Y at 150 100
-node A at 50 150
-node X at 250 150
-node B at 150 200
+node Y at 750 280
+node A at 650 330
+node X at 850 330
+node B at 750 380
 
 edge Y A
 edge Y X
@@ -75,6 +74,12 @@ edge X B
 			</AnimationPropertyItem>
 			<AnimationPropertyItem type="BooleanPropertyItem">
 				<name>hidden</name>
+				<isEditable value="false" />
+				<label></label>
+				<value><boolean value="false" /></value>
+			</AnimationPropertyItem>
+			<AnimationPropertyItem type="BooleanPropertyItem">
+				<name>filled</name>
 				<isEditable value="false" />
 				<label></label>
 				<value><boolean value="false" /></value>
@@ -225,7 +230,7 @@ edge X B
 				<name>font</name>
 				<isEditable value="false" />
 				<label></label>
-				<value><Font>Monospace</Font></value>
+				<value><Font>Monospaced</Font></value>
 			</AnimationPropertyItem>
 		</AnimationProperties>
 	</Folder>

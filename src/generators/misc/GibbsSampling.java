@@ -95,7 +95,7 @@ public class GibbsSampling implements ValidatingGenerator {
         numberOfIterations = (int) primitives.get("NumberOfSamples");
 
         // init graph, probabilities and values
-        GraphProperties graphProps = new GraphProperties();
+        /*GraphProperties graphProps = new GraphProperties();
         graphProps.set(AnimationPropertiesKeys.NAME, "graphProps");
         graphProps.set(AnimationPropertiesKeys.DIRECTED_PROPERTY, true);
         graphProps.set(AnimationPropertiesKeys.FILLED_PROPERTY, false);
@@ -104,8 +104,9 @@ public class GibbsSampling implements ValidatingGenerator {
         graphProps.set(AnimationPropertiesKeys.ELEMHIGHLIGHT_PROPERTY, Color.BLACK);
         graphProps.set(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY, Color.GREEN);
         graphProps.set(AnimationPropertiesKeys.NODECOLOR_PROPERTY, Color.BLACK);
-        graphProps.set(AnimationPropertiesKeys.WEIGHTED_PROPERTY, false);
-        //bn.init(primitives, props, vars, sampleVars);
+        graphProps.set(AnimationPropertiesKeys.WEIGHTED_PROPERTY, false);*/
+
+        GraphProperties graphProps = (GraphProperties) props.getPropertiesByName("graphProps");
         bn.init(primitives, graphProps, vars, sampleVars);
 
 
@@ -127,8 +128,8 @@ public class GibbsSampling implements ValidatingGenerator {
                 Font.MONOSPACED, Font.PLAIN, 16));
         sourceCodeProps.set(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY, Color.RED);
         sourceCodeProps.set(AnimationPropertiesKeys.NAME, "sourceCode");
-        //code.init((SourceCodeProperties) props.getPropertiesByName("sourceCode"));
-        code.init(sourceCodeProps);
+        code.init((SourceCodeProperties) props.getPropertiesByName("sourceCode"));
+        //code.init(sourceCodeProps);
         code.add();
 
         // show additional information

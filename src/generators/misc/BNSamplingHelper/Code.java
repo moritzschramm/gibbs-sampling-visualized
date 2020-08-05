@@ -38,7 +38,8 @@ public class Code {
         SourceCodeProperties expCodeProps = new SourceCodeProperties();
         expCodeProps.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
                 Font.SANS_SERIF, Font.ITALIC, 16));
-        expCodeProps.set(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY, Color.RED);
+        expCodeProps.set(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY, scp.get(AnimationPropertiesKeys.HIGHLIGHTCOLOR_PROPERTY));
+        expCodeProps.set(AnimationPropertiesKeys.COLOR_PROPERTY, scp.get(AnimationPropertiesKeys.COLOR_PROPERTY));
 
         exp = lang.newSourceCode(new Coordinates(x, y), "explanation", null, expCodeProps);
         exp.addCodeLine("1. "+translator.translateMessage("line0"), null, 0, null);
@@ -50,6 +51,8 @@ public class Code {
         exp.addCodeLine("7. "+translator.translateMessage("line6"), null, 0, null);
         exp.addCodeLine("8. "+translator.translateMessage("line7"), null, 0, null);
 
+        scp.set(AnimationPropertiesKeys.FONT_PROPERTY, new Font(
+                Font.MONOSPACED, Font.PLAIN, 16));
         sc = lang.newSourceCode(new Offset(0, 10, "explanation", AnimalScript.DIRECTION_SW), "sourceCode",
                 null, scp);
 
