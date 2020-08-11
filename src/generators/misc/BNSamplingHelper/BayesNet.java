@@ -17,7 +17,7 @@ public class BayesNet {
     private Language lang;
 
     // graph and properties
-    private Graph graph;
+    public Graph graph;
     private GraphProperties props;
     private int[][] adjacencyMatrix;
     public static Color HIGHLIGHT_COLOR;
